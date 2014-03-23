@@ -9,13 +9,7 @@ int main(int argc, char ** argv) {
   
   GroundStation groundStation;
   
-  ros::Rate sleep_rate(50);
-  
-  while(ros::ok()) {
-    ros::spinOnce();
-    
-    sleep_rate.sleep();
-  }
+  groundStation.loop();
   
   return app.exec();
 }

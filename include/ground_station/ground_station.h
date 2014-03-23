@@ -15,11 +15,15 @@ public:
   explicit GroundStation(QObject * parent = 0);
   ~GroundStation();
   
+  void loop();
+  
 private:
   ros::NodeHandle _nh;
   ros::NodeHandle _nhPrivate;
   
   ros::Subscriber imageSubscriber;
+  
+  int _spinFrequence;
   
   QSet<Drone*>_drones;
   

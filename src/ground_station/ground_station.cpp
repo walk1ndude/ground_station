@@ -11,7 +11,8 @@
 
 GroundStation::GroundStation(QObject * parent) :
   QObject(parent),
-  _nhPrivate("~") {
+  _nhPrivate("~"),
+  _spinFrequence(30) {
   cv::namedWindow(CAMERA_WINDOW, CV_WINDOW_AUTOSIZE);
   imageSubscriber = _nh.subscribe<sensor_msgs::Image>(TEST_CAMERA, 1, &GroundStation::processImage, this);
   
@@ -21,6 +22,16 @@ GroundStation::GroundStation(QObject * parent) :
 
 GroundStation::~GroundStation() {
   qDeleteAll(_drones.begin(), _drones.end());
+}
+
+void GroundStation::loop() {
+  ros::Rate sleep_rate(_spinFrequence);
+  
+  while(_nh.ok()) {
+    ros::spinOnce();
+    
+    sleep_rate.sleep();
+  }
 }
 
 void GroundStation::fetchParams() {

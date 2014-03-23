@@ -1,6 +1,8 @@
 #include <QtCore/QDir>
 #include <QtCore/QTextStream>
 
+#include <sstream>
+
 #include "ground_station/drone.h"
 
 Drone::Drone(const DroneData & droneData, ros::NodeHandle * nh, QObject * parent) :
@@ -15,11 +17,19 @@ Drone::~Drone() {
 }
 
 void Drone::fetchSubscribers() {
-  _markerInfoSubscriber = _nh->subscribe("/drone" + std::to_string(_droneData.id) + GET_MARKER_INFO_TOPIC, 1, &Drone::getMarkerInfo, this);
+  std::stringstream topicToSubsribe;
+  
+  topicToSubsribe << "/drone" << _droneData.id << GET_MARKER_INFO_TOPIC;
+  
+  _markerInfoSubscriber = _nh->subscribe(topicToSubsribe.str(), 1, &Drone::getMarkerInfo, this);
 }
 
 void Drone::fetchPublishers() {
-  _markerInfoPublisher = _nh->advertise<geometry_msgs::PoseArray>("/drone" + std::to_string(_droneData.id) + SET_MARKER_INFO_TOPIC, 1);
+  std::stringstream topicToPublish;
+  
+  topicToPublish << "/drone" << _droneData.id << SET_MARKER_INFO_TOPIC;
+  
+  _markerInfoPublisher = _nh->advertise<geometry_msgs::PoseArray>(topicToPublish.str(), 1);
 }
 
 void Drone::fetchProgram() {
