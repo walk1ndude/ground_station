@@ -1,37 +1,44 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
 #include "ground_station/ground_station.h"
 
 #define CAMERA_WINDOW "camera_ardrone"
-#define TEST_CAMERA "/drone0/ardrone/image_raw"
+#define TEST_CAMERA "/ardrone/image_raw"
 
 GroundStation::GroundStation(QObject * parent) :
   QObject(parent),
-  _nhPrivate("~"),
-  _spinFrequence(30) {
-  cv::namedWindow(CAMERA_WINDOW, CV_WINDOW_AUTOSIZE);
-  imageSubscriber = _nh.subscribe<sensor_msgs::Image>(TEST_CAMERA, 1, &GroundStation::processImage, this);
+  _nhPrivate("~") {
   
+  fetchMapMaker();
   fetchParams();
   launchDrones();
 }
 
 GroundStation::~GroundStation() {
   qDeleteAll(_drones.begin(), _drones.end());
+  delete _mapMaker;
 }
 
-void GroundStation::loop() {
-  ros::Rate sleep_rate(_spinFrequence);
+void GroundStation::loop(const int & frequency) {
+  ros::Rate sleep_rate(frequency);
   
   while(_nh.ok()) {
     ros::spinOnce();
     
     sleep_rate.sleep();
   }
+}
+
+void GroundStation::fetchMapMaker() {
+  _mapMaker = new MapMaker;
+  QThread * mapThread = new QThread;
+  _mapMaker->moveToThread(mapThread);
+  
+  QObject::connect(_mapMaker, &MapMaker::destroyed, mapThread, &QThread::quit);
+  QObject::connect(mapThread, &QThread::finished, mapThread, &QThread::deleteLater);
+  
+  mapThread->start();
 }
 
 void GroundStation::fetchParams() {
@@ -52,6 +59,7 @@ void GroundStation::fetchDrones(const std::vector<std::string> & droneDrivers) {
   DroneData droneData;
   
   for (int i = 0; i != droneDrivers.size(); ++ i) {
+
     QThread * thread = new QThread;
     
     droneData.id = i;
@@ -62,7 +70,9 @@ void GroundStation::fetchDrones(const std::vector<std::string> & droneDrivers) {
     
     QObject::connect(thread, &QThread::started, drone, &Drone::startTask);
     QObject::connect(drone, (void (Drone::*)(Drone*))&Drone::signalTaskFinished,
-		   this, (void (GroundStation::*)(Drone*))&GroundStation::removeDrone, Qt::DirectConnection);
+		  this, (void (GroundStation::*)(Drone*))&GroundStation::removeDrone, Qt::DirectConnection);
+    QObject::connect(drone, (void (Drone::*)(geometry_msgs::PoseArray))&Drone::signalCorrectMarkerInfo,
+		   _mapMaker, (void (MapMaker::*)(geometry_msgs::PoseArray))&MapMaker::correctMarkerInfo, Qt::DirectConnection);
     QObject::connect(drone, &Drone::destroyed, thread, &QThread::quit);
     QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     
@@ -83,12 +93,4 @@ void GroundStation::launchDrones() {
 void GroundStation::removeDrone(Drone * drone) {
   _drones.remove(drone);
   drone->deleteLater();
-}
-
-// just for test image processing
-void GroundStation::processImage(const sensor_msgs::ImageConstPtr & msg) {
-  cv_bridge::CvImagePtr im_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-  
-  cv::imshow(CAMERA_WINDOW, im_ptr->image);
-  cv::waitKey(0);
 }

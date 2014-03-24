@@ -9,7 +9,7 @@ int main(int argc, char ** argv) {
   
   GroundStation groundStation;
   
-  groundStation.loop();
+  groundStation.loop(30);
   
   return app.exec();
 }

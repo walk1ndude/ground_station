@@ -9,7 +9,10 @@ Drone::Drone(const DroneData & droneData, ros::NodeHandle * nh, QObject * parent
   QObject(parent),
   _nh(nh),
   _droneData(droneData) {
+    
   fetchProgram();
+  fetchPublishers();
+  fetchSubscribers();
 }
 
 Drone::~Drone() {
@@ -20,6 +23,8 @@ void Drone::fetchSubscribers() {
   std::stringstream topicToSubsribe;
   
   topicToSubsribe << "/drone" << _droneData.id << GET_MARKER_INFO_TOPIC;
+  
+  qDebug() << topicToSubsribe;
   
   _markerInfoSubscriber = _nh->subscribe(topicToSubsribe.str(), 1, &Drone::getMarkerInfo, this);
 }
@@ -44,6 +49,8 @@ void Drone::fetchProgram() {
     QTextStream stream(&file);
   
     stream << QString("<launch>\n<group ns=\"%1\">\n").arg(droneName) <<
+    QString("<remap from=\"/ardrone/front/image_raw\" to=\"/%1/ardrone/front/image_raw\" />\n").arg(droneName) <<
+    QString("<remap from=\"/ardrone/bottom/image_raw\" to=\"/%1/ardrone/bottom/image_raw\" />\n").arg(droneName) <<
     QString("<remap from=\"/ardrone/image_raw\" to=\"/%1/ardrone/image_raw\" />\n").arg(droneName) <<
     QString("<remap from=\"/ardrone/navdata\" to=\"/%1/ardrone/navdata\" />\n").arg(droneName) <<
     QString("<remap from=\"/get_marker_info\" to=\"/%1/get_marker_info\" />\n").arg(droneName) <<
@@ -66,20 +73,25 @@ void Drone::startTask() {
   if (_program != "") {
     _process = new QProcess;
     _process->setProcessChannelMode(QProcess::MergedChannels);
+
     _process->start(_program);
+    
+    QObject::connect(_process, (void (QProcess::*)(int))&QProcess::finished, this, (void (Drone::*)(int))&Drone::finishTask);
 
     _process->waitForStarted();
-
-    _process->waitForFinished(-1);
-
-    emit signalTaskFinished(this);
   }
+}
+
+void Drone::finishTask(int code) {
+  emit signalTaskFinished(this);
 }
 
 void Drone::getMarkerInfo(const geometry_msgs::PoseArray & markerInfo) {
   _markerInfo = markerInfo;
   
-  emit signalMarkerInfo(markerInfo);
+    qDebug() << "in drone" << thread();
+  
+  emit signalCorrectMarkerInfo(markerInfo);
 }
 
 void Drone::correctMarkerInfo(geometry_msgs::PoseArray markerInfo) {

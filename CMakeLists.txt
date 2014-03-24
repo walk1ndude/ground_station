@@ -6,6 +6,7 @@ find_package(Qt5Core)
 find_package(OpenCV REQUIRED COMPONENTS highgui imgproc)
 
 set(CMAKE_BUILD_TYPE RelWithDebugInfo)
+set(CMAKE_CXX_FLAGS, "-std=c++11")
 
 catkin_package(INCLUDE_DIRS include)
 include_directories(include)

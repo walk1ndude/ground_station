@@ -8,10 +8,8 @@
 #include <QtCore/QProcess>
 #include <QtCore/QDebug>
 
-#include <iostream>
-
-#define GET_MARKER_INFO_TOPIC "get_marker_info"
-#define SET_MARKER_INFO_TOPIC "set_marker_info"
+#define GET_MARKER_INFO_TOPIC "/get_marker_info"
+#define SET_MARKER_INFO_TOPIC "/set_marker_info"
 
 typedef struct _DroneData {
   int id;
@@ -44,13 +42,15 @@ private:
   void fetchPublishers();
   
   void getMarkerInfo(const geometry_msgs::PoseArray & markerInfo);
+
   
 signals:
   void signalTaskFinished(Drone * drone);
-  void signalMarkerInfo(geometry_msgs::PoseArray markerInfo);
-  
+  void signalCorrectMarkerInfo(geometry_msgs::PoseArray markerInfo);
+
 public slots:
   void startTask();
+  void finishTask(int code);
   void correctMarkerInfo(geometry_msgs::PoseArray markerInfo);
 };
 

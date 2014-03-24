@@ -1,13 +1,11 @@
 #ifndef GROUND_STATIONH
 #define GROUND_STATIONH
 
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-
 #include <QtCore/QThread>
 #include <QtCore/QSet>
 
 #include "ground_station/drone.h"
+#include "ground_station/map_maker.h"
 
 class GroundStation : public QObject {
   Q_OBJECT
@@ -15,7 +13,7 @@ public:
   explicit GroundStation(QObject * parent = 0);
   ~GroundStation();
   
-  void loop();
+  void loop(const int & frequency);
   
 private:
   ros::NodeHandle _nh;
@@ -23,15 +21,14 @@ private:
   
   ros::Subscriber imageSubscriber;
   
-  int _spinFrequence;
+  MapMaker * _mapMaker;
   
   QSet<Drone*>_drones;
   
   void fetchParams();
+  void fetchMapMaker();
   
   void inline fetchDrones(const std::vector<std::string> & droneDrivers);
-  
-  void processImage(const sensor_msgs::ImageConstPtr & msg);
 
 public slots:
   void launchDrones();

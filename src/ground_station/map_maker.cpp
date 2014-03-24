@@ -8,3 +8,7 @@ MapMaker::MapMaker(QObject * parent) :
 MapMaker::~MapMaker() {
   
 }
+
+void MapMaker::correctMarkerInfo(geometry_msgs::PoseArray markerInfo) {
+  qDebug() << "in map maker" << thread();
+}
