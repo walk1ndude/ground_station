@@ -10,13 +10,16 @@ Drone::Drone(const DroneData & droneData, ros::NodeHandle * nh, QObject * parent
   _nh(nh),
   _droneData(droneData) {
     
-  fetchProgram();
-  fetchPublishers();
-  fetchSubscribers();
 }
 
 Drone::~Drone() {
   delete _process;
+}
+
+void Drone::fetchDrone() {
+  fetchPublishers();
+  fetchSubscribers();
+  fetchProgram();
 }
 
 void Drone::fetchSubscribers() {
@@ -70,6 +73,8 @@ void Drone::fetchProgram() {
 }
 
 void Drone::startTask() {
+  fetchDrone();
+  
   if (_program != "") {
     _process = new QProcess;
     _process->setProcessChannelMode(QProcess::MergedChannels);

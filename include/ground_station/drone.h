@@ -37,6 +37,7 @@ private:
   
   QString _program;
   
+  void fetchDrone();
   void fetchProgram();
   void fetchSubscribers();
   void fetchPublishers();
