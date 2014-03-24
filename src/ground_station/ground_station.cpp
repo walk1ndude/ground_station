@@ -2,6 +2,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 #include "ground_station/ground_station.h"
+#include <../../tum_ardrone/src/stateestimation/PTAM/Map.h>
 
 #define CAMERA_WINDOW "camera_ardrone"
 #define TEST_CAMERA "/ardrone/image_raw"
@@ -73,6 +74,8 @@ void GroundStation::fetchDrones(const std::vector<std::string> & droneDrivers) {
 		  this, (void (GroundStation::*)(Drone*))&GroundStation::removeDrone, Qt::DirectConnection);
     QObject::connect(drone, (void (Drone::*)(geometry_msgs::PoseArray))&Drone::signalCorrectMarkerInfo,
 		   _mapMaker, (void (MapMaker::*)(geometry_msgs::PoseArray))&MapMaker::correctMarkerInfo, Qt::DirectConnection);
+    QObject::connect(_mapMaker, (void (MapMaker::*)(geometry_msgs::PoseArray))&MapMaker::signalCorrectedMarkerInfo,
+		     drone, (void (Drone::*)(geometry_msgs::PoseArray))&Drone::setMarkerInfo, Qt::DirectConnection);
     QObject::connect(drone, &Drone::destroyed, thread, &QThread::quit);
     QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     

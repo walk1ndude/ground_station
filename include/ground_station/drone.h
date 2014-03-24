@@ -52,7 +52,7 @@ signals:
 public slots:
   void startTask();
   void finishTask(int code);
-  void correctMarkerInfo(geometry_msgs::PoseArray markerInfo);
+  void setMarkerInfo(geometry_msgs::PoseArray markerInfo);
 };
 
 #endif

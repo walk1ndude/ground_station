@@ -15,6 +15,9 @@ public:
 
 private:
   
+signals:
+  void signalCorrectedMarkerInfo(geometry_msgs::PoseArray markerInfo);
+
 public slots:
   void correctMarkerInfo(geometry_msgs::PoseArray markerInfo);
 };

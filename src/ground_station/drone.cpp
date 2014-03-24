@@ -99,7 +99,7 @@ void Drone::getMarkerInfo(const geometry_msgs::PoseArray & markerInfo) {
   emit signalCorrectMarkerInfo(markerInfo);
 }
 
-void Drone::correctMarkerInfo(geometry_msgs::PoseArray markerInfo) {
+void Drone::setMarkerInfo(geometry_msgs::PoseArray markerInfo) {
   
   
 }
