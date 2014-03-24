@@ -2,7 +2,6 @@
 #include <sensor_msgs/image_encodings.h>
 
 #include "ground_station/ground_station.h"
-#include <../../tum_ardrone/src/stateestimation/PTAM/Map.h>
 
 #define CAMERA_WINDOW "camera_ardrone"
 #define TEST_CAMERA "/ardrone/image_raw"
