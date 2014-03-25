@@ -3,9 +3,6 @@
 
 #include "ground_station/ground_station.h"
 
-#define CAMERA_WINDOW "camera_ardrone"
-#define TEST_CAMERA "/ardrone/image_raw"
-
 GroundStation::GroundStation(QObject * parent) :
   QObject(parent),
   _nhPrivate("~") {
@@ -31,10 +28,11 @@ void GroundStation::loop(const int & frequency) {
 }
 
 void GroundStation::fetchMapMaker() {
-  _mapMaker = new MapMaker;
+  _mapMaker = new MapMaker(&_nh);
   QThread * mapThread = new QThread;
   _mapMaker->moveToThread(mapThread);
   
+  QObject::connect(mapThread, &QThread::started, _mapMaker, &MapMaker::startMapMaker);
   QObject::connect(_mapMaker, &MapMaker::destroyed, mapThread, &QThread::quit);
   QObject::connect(mapThread, &QThread::finished, mapThread, &QThread::deleteLater);
   
@@ -57,6 +55,7 @@ void GroundStation::fetchParams() {
 
 void GroundStation::fetchDrones(const std::vector<std::string> & droneDrivers) {
   DroneData droneData;
+  std::stringstream stream;
   
   for (int i = 0; i != droneDrivers.size(); ++ i) {
 
@@ -65,14 +64,20 @@ void GroundStation::fetchDrones(const std::vector<std::string> & droneDrivers) {
     droneData.id = i;
     droneData.driver = droneDrivers[i];
     
+    stream << "drone" << i;
+    droneData.string_id = stream.str();
+    
+    stream.str(std::string());
+    stream.clear();
+    
     Drone * drone = new Drone(droneData, &_nh);
     drone->moveToThread(thread);
     
     QObject::connect(thread, &QThread::started, drone, &Drone::startTask);
     QObject::connect(drone, (void (Drone::*)(Drone*))&Drone::signalTaskFinished,
 		  this, (void (GroundStation::*)(Drone*))&GroundStation::removeDrone, Qt::DirectConnection);
-    QObject::connect(drone, (void (Drone::*)(geometry_msgs::PoseArray))&Drone::signalCorrectMarkerInfo,
-		   _mapMaker, (void (MapMaker::*)(geometry_msgs::PoseArray))&MapMaker::correctMarkerInfo, Qt::DirectConnection);
+    QObject::connect(drone, (void (Drone::*)(Drone*, geometry_msgs::PoseArray))&Drone::signalCorrectMarkerInfo,
+		   _mapMaker, (void (MapMaker::*)(Drone*, geometry_msgs::PoseArray))&MapMaker::correctMarkerInfo, Qt::DirectConnection);
     QObject::connect(_mapMaker, (void (MapMaker::*)(geometry_msgs::PoseArray))&MapMaker::signalCorrectedMarkerInfo,
 		     drone, (void (Drone::*)(geometry_msgs::PoseArray))&Drone::setMarkerInfo, Qt::DirectConnection);
     QObject::connect(drone, &Drone::destroyed, thread, &QThread::quit);

@@ -13,6 +13,7 @@
 
 typedef struct _DroneData {
   int id;
+  std::string string_id; //for rviz
   std::string driver;
 }DroneData;
 
@@ -21,6 +22,9 @@ class Drone : public QObject {
 public:
   Drone(const DroneData & droneData, ros::NodeHandle * nh, QObject * parent = 0);
   ~Drone();
+  
+  int id();
+  std::string strId();
   
 private:
   ros::NodeHandle * _nh;
@@ -47,7 +51,7 @@ private:
   
 signals:
   void signalTaskFinished(Drone * drone);
-  void signalCorrectMarkerInfo(geometry_msgs::PoseArray markerInfo);
+  void signalCorrectMarkerInfo(Drone * drone, geometry_msgs::PoseArray markerInfo);
 
 public slots:
   void startTask();

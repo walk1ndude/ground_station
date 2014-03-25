@@ -22,12 +22,18 @@ void Drone::fetchDrone() {
   fetchProgram();
 }
 
+int Drone::id() {
+  return _droneData.id;
+}
+
+std::string Drone::strId() {
+  return _droneData.string_id;
+}
+
 void Drone::fetchSubscribers() {
   std::stringstream topicToSubsribe;
   
   topicToSubsribe << "/drone" << _droneData.id << GET_MARKER_INFO_TOPIC;
-  
-  qDebug() << topicToSubsribe;
   
   _markerInfoSubscriber = _nh->subscribe(topicToSubsribe.str(), 1, &Drone::getMarkerInfo, this);
 }
@@ -93,13 +99,9 @@ void Drone::finishTask(int code) {
 
 void Drone::getMarkerInfo(const geometry_msgs::PoseArray & markerInfo) {
   _markerInfo = markerInfo;
-  
-    qDebug() << "in drone" << thread();
-  
-  emit signalCorrectMarkerInfo(markerInfo);
+  emit signalCorrectMarkerInfo(this, markerInfo);
 }
 
 void Drone::setMarkerInfo(geometry_msgs::PoseArray markerInfo) {
-  
-  
+  _markerInfoPublisher.publish<geometry_msgs::PoseArray>(markerInfo);
 }

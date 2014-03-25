@@ -5,8 +5,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs sensor_msgs cv_
 find_package(Qt5Core)
 find_package(OpenCV REQUIRED COMPONENTS highgui imgproc)
 
-set(CMAKE_BUILD_TYPE RelWithDebugInfo)
-#set(CMAKE_CXX_FLAGS, "-std=c++11")
+set(CMAKE_BUILD_TYPE Release)
 
 catkin_package(INCLUDE_DIRS include)
 include_directories(include)
@@ -21,4 +20,4 @@ add_executable(ground_station_node ${QT_SOURCES} ${QT_MOC_HPP})
 add_dependencies(ground_station_node ${PROJECT_NAME}_generate_messages_cpp)
 qt5_use_modules(ground_station_node Core)
 
-target_link_libraries(ground_station_node ${catkin_LIBRARIES} ${QT_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(ground_station_node ${catkin_LIBRARIES} Qt5::Core ${OpenCV_LIBS})
