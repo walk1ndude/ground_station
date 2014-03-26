@@ -7,6 +7,9 @@ int main(int argc, char ** argv) {
   
   QCoreApplication app(argc,argv);
   
+  qRegisterMetaType<PosesVisualData>("PosesVisualData");
+  qRegisterMetaType<geometry_msgs::PoseArray>("geometry_msgs::PoseArray");
+  
   GroundStation groundStation;
   
   groundStation.loop(30);

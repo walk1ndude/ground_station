@@ -28,7 +28,7 @@ private:
   void fetchParams();
   void fetchMapMaker();
   
-  void inline fetchDrones(const std::vector<std::string> & droneDrivers);
+  void fetchDrones(const std::vector<std::string> & droneDrivers);
 
 public slots:
   void launchDrones();

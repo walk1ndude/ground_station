@@ -5,10 +5,11 @@
 #include <QtCore/QDebug>
 
 #include <ros/ros.h>
-#include <geometry_msgs/PoseArray.h>
+
 #include <visualization_msgs/MarkerArray.h>
 
 #include "ground_station/drone.h"
+#include "ground_station/map.h"
 
 #define MAP_TOPIC "map_topic"
 
@@ -23,19 +24,20 @@ private:
   
   ros::Publisher _visualPub;
   
-  QHash<Drone*,visualization_msgs::Marker::_color_type>_drones;
+  Map * _map;
   
   void fetchPublishers();
-  void addNewDrone(Drone * drone);
-  void updateRVizMap(const std::string ns, const visualization_msgs::Marker::_color_type & color,
-		     const geometry_msgs::PoseArray & markerInfo);
+  void fetchMap();
+  
+  void addNewInfoToMap(Map * map, Drone * drone, const geometry_msgs::PoseArray & posesInfo);
   
 signals:
   void signalCorrectedMarkerInfo(geometry_msgs::PoseArray markerInfo);
 
 public slots:
   void startMapMaker();
-  void correctMarkerInfo(Drone * drone, geometry_msgs::PoseArray markerInfo);
+  void correctPosesInfo(Drone * drone, geometry_msgs::PoseArray posesInfo);
+  void updateRVizMap(PosesVisualData posesVisualData, geometry_msgs::PoseArray posesInfo);
 };
   
 #endif

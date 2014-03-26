@@ -35,7 +35,7 @@ void Drone::fetchSubscribers() {
   
   topicToSubsribe << "/drone" << _droneData.id << GET_MARKER_INFO_TOPIC;
   
-  _markerInfoSubscriber = _nh->subscribe(topicToSubsribe.str(), 1, &Drone::getMarkerInfo, this);
+  _posesInfoSubscriber = _nh->subscribe(topicToSubsribe.str(), 1, &Drone::getPosesInfo, this);
 }
 
 void Drone::fetchPublishers() {
@@ -43,7 +43,7 @@ void Drone::fetchPublishers() {
   
   topicToPublish << "/drone" << _droneData.id << SET_MARKER_INFO_TOPIC;
   
-  _markerInfoPublisher = _nh->advertise<geometry_msgs::PoseArray>(topicToPublish.str(), 1);
+  _posesInfoPublisher = _nh->advertise<geometry_msgs::PoseArray>(topicToPublish.str(), 1);
 }
 
 void Drone::fetchProgram() {
@@ -62,7 +62,7 @@ void Drone::fetchProgram() {
     QString("<remap from=\"/ardrone/bottom/image_raw\" to=\"/%1/ardrone/bottom/image_raw\" />\n").arg(droneName) <<
     QString("<remap from=\"/ardrone/image_raw\" to=\"/%1/ardrone/image_raw\" />\n").arg(droneName) <<
     QString("<remap from=\"/ardrone/navdata\" to=\"/%1/ardrone/navdata\" />\n").arg(droneName) <<
-    QString("<remap from=\"/get_marker_info\" to=\"/%1/get_marker_info\" />\n").arg(droneName) <<
+    QString("<remap from=\"/get_poses_info\" to=\"/%1/get_poses_info\" />\n").arg(droneName) <<
     QString("<remap from=\"cmd_vel\" to=\"/%1/cmd_vel\" />\n").arg(droneName) <<
     QString("<%2 output=\"screen\"/>\n").arg(QString::fromStdString(_droneData.driver)) <<
     "<node pkg=\"navpts\" type=\"navpts\" name=\"navpts\" respawn=\"true\" output=\"screen\">\n" <<
@@ -87,7 +87,7 @@ void Drone::startTask() {
 
     _process->start(_program);
     
-    QObject::connect(_process, (void (QProcess::*)(int))&QProcess::finished, this, (void (Drone::*)(int))&Drone::finishTask);
+    QObject::connect(_process, (void (QProcess::*)(int))&QProcess::finished, this, &Drone::finishTask);
 
     _process->waitForStarted();
   }
@@ -97,11 +97,11 @@ void Drone::finishTask(int code) {
   emit signalTaskFinished(this);
 }
 
-void Drone::getMarkerInfo(const geometry_msgs::PoseArray & markerInfo) {
-  _markerInfo = markerInfo;
-  emit signalCorrectMarkerInfo(this, markerInfo);
+void Drone::getPosesInfo(const geometry_msgs::PoseArray & posesInfo) {
+  _posesInfo = posesInfo;
+  emit signalCorrectPosesInfo(this, posesInfo);
 }
 
-void Drone::setMarkerInfo(geometry_msgs::PoseArray markerInfo) {
-  _markerInfoPublisher.publish<geometry_msgs::PoseArray>(markerInfo);
+void Drone::setPosesInfo(geometry_msgs::PoseArray posesInfo) {
+  _posesInfoPublisher.publish<geometry_msgs::PoseArray>(posesInfo);
 }
