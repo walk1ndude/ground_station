@@ -1,7 +1,7 @@
 #include "ground_station/map.h"
 
-Map::Map(const PosesVisualData & posesVisualData, QObject * parent):
-  _posesVisualData(posesVisualData),
+Map::Map(const PosesVisualData & worldMapVisualData, QObject * parent):
+  _worldMapVisualData(worldMapVisualData),
   QObject(parent) {
 
 }
@@ -16,6 +16,8 @@ void Map::addNewPoses(Drone * drone, const geometry_msgs::PoseArray & posesInfo)
   
   addNewDroneRViz(drone);
   addNewDroneMap(drone, posesInfo);
+  
+  tryToUpdateWorldMap();
   
   updateRViz();
   
@@ -37,8 +39,50 @@ void Map::addNewDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesIn
   }
 }
 
-void Map::updateDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo) {
+void Map::tryToUpdateWorldMap() {
+  
+  
+}
 
+void Map::updateDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo) {
+  // 'cause we don't want to check new poses with new, only new with old ones
+  QVector<geometry_msgs::PoseStamped>posesDroneNew = _posesByDrone[drone];
+  QVector<geometry_msgs::PoseStamped>posesDroneOld = _posesByDrone[drone];
+  
+  geometry_msgs::PoseStamped pose;
+  size_t pos;
+  
+  for (size_t i = 0; i != posesInfo.poses.size(); ++ i) {
+    pos = findPoseInArray(posesDroneOld, posesInfo.poses[i], POSE_SIMILAR_TOLERANCE_BORDER);
+    
+    if (pos == -1) {
+      pose.header = posesInfo.header;
+      pose.pose = posesInfo.poses[i];
+      
+      posesDroneNew.push_back(pose);
+    }
+    else {
+      posesDroneNew[pos].header = posesInfo.header;
+      posesDroneNew[pos].pose = posesInfo.poses[i];
+    }
+  }
+  
+  _posesByDrone[drone] = posesDroneNew;
+}
+
+size_t Map::findPoseInArray(const QVector<geometry_msgs::PoseStamped> & posesDrone, const geometry_msgs::Pose & pose,
+		       const float & toleranceRadius) {
+  geometry_msgs::PoseStamped curPose;
+  
+  for (size_t i = 0; i != posesDrone.size(); ++ i) {
+    if ((curPose.pose.position.x - pose.position.x) * (curPose.pose.position.x - pose.position.x) +
+      (curPose.pose.position.y - pose.position.y) * (curPose.pose.position.y - pose.position.y) +
+      (curPose.pose.position.z - pose.position.z) * (curPose.pose.position.z - pose.position.z) <= toleranceRadius) {
+	return i;
+    }
+  }
+  
+  return -1;
 }
 
 void Map::updateRViz() {
@@ -48,6 +92,8 @@ void Map::updateRViz() {
     it.next();
     emit signalUpdateRViz(it.value(), qVPosesArrayToPoseArray(_posesByDrone[it.key()]));
   }
+  
+  emit signalUpdateRViz(_worldMapVisualData, qVPosesArrayToPoseArray(_worldMap));
 }
 
 QVector<geometry_msgs::PoseStamped> Map::posesArrayToQVPoseArray(const geometry_msgs::PoseArray & posesArray) {

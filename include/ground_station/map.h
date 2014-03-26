@@ -13,7 +13,7 @@
 
 #include "ground_station/drone.h"
 
-#define MARKER_SIMILARITY_BORDER 0.1 // a sphere around marker to seperate really new or previously found markers
+#define POSE_SIMILAR_TOLERANCE_BORDER 0.5 // a sphere around marker to seperate really new or previously found markers
 
 typedef struct _PosesVisualData {
   std::string ns;
@@ -62,7 +62,7 @@ typedef struct _PosesVisualData {
 class Map : public QObject {
   Q_OBJECT
 public:
-  explicit Map(const PosesVisualData & posesVisualData, QObject * parent = 0);
+  explicit Map(const PosesVisualData & worldMapVisualData, QObject * parent = 0);
   ~Map();
   
   void addNewPoses(Drone * drone, const geometry_msgs::PoseArray & posesInfo);
@@ -71,16 +71,24 @@ private:
   QHash<Drone*, PosesVisualData>_drones;
   
   QHash<Drone*, QVector<geometry_msgs::PoseStamped> >_posesByDrone;
-  QVector<geometry_msgs::PoseStamped>_OverallMap;
+  QVector<geometry_msgs::PoseStamped>_worldMap;
   
-  PosesVisualData _posesVisualData;
+  PosesVisualData _worldMapVisualData;
   
   QMutex _mapMutex;
+  
+  //for now first drone - map coordinate system's center
+  Drone * _droneCoord;
   
   void addNewDroneRViz(Drone * drone);
   void addNewDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo);
   
   void updateDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo);
+  
+  static size_t findPoseInArray(const QVector<geometry_msgs::PoseStamped> & posesDrone, const geometry_msgs::Pose & pose,
+    const float & toleranceRadius = 1.0);
+  
+  void tryToUpdateWorldMap();
   
   void updateRViz();
   

@@ -18,7 +18,7 @@ void MapMaker::startMapMaker() {
 }
 
 void MapMaker::fetchMap() {
-  _map = new Map(PosesVisualData("overallMap"));
+  _map = new Map(PosesVisualData("WorldMap"));
   QObject::connect(_map, &Map::signalUpdateRViz, this, &MapMaker::updateRVizMap);
 }
 
@@ -27,7 +27,6 @@ void MapMaker::fetchPublishers() {
 }
 
 void MapMaker::updateRVizMap(PosesVisualData posesVisualData, geometry_msgs::PoseArray posesInfo) {
-  
   visualization_msgs::MarkerArray mapPoses;
   
   mapPoses.markers.resize(posesInfo.poses.size());
