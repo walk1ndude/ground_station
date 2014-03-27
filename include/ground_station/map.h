@@ -73,7 +73,7 @@ public:
   explicit Map(const PosesVisualData & worldMapVisualData, QObject * parent = 0);
   ~Map();
   
-  void addNewPoses(Drone * drone, const navpts::PoseArrayID & posesInfo);
+  void addNewPoses(Drone * drone, const navpts_group::PoseArrayID & posesInfo);
   
 private:
   QHash<Drone*, PosesVisualData>_drones;
@@ -93,19 +93,19 @@ private:
   Drone * _droneWorldMap;
   
   void addNewDroneRViz(Drone * drone);
-  void addNewDroneMap(Drone * drone, const navpts::PoseArrayID & posesInfo);
+  void addNewDroneMap(Drone * drone, const navpts_group::PoseArrayID & posesInfo);
   void addNewDroneRT(Drone * drone);
   
-  static QHash<int, geometry_msgs::PoseStamped> poseArrayToHash(const navpts::PoseArrayID & posesInfo);
+  static QHash<int, geometry_msgs::PoseStamped> poseArrayToHash(const navpts_group::PoseArrayID & posesInfo);
   static geometry_msgs::PoseArray hashToPoseArray(const QHash<int, geometry_msgs::PoseStamped> & posesInfo);
   
-  void updateDroneMap(Drone * drone, const navpts::PoseArrayID & posesInfo);
+  void updateDroneMap(Drone * drone, const navpts_group::PoseArrayID & posesInfo);
   
   void tryToUpdateWorldMap();
-  QVector<Drone*> findDronesWithSimilarPoses(Drone * pivotDrone);
-  void findRTMatrices(Drone * pivotDrone, const QVector<Drone*> & dronesWithSimilarPoses);
+  QHash<Drone *, QVector<int> > findMatches(Drone * pivotDrone);
+  void findRTMatrices(Drone * pivotDrone, const QHash<Drone *, QVector<int> > &dronesWithMatches);
   
-  static std::vector<cv::Point3f> posesToCvPoints(const QHash<int, geometry_msgs::PoseStamped> & poses);
+  static cv::Point3f poseToCvPoint(const geometry_msgs::PoseStamped & pose);
   
   void updateRViz();
   

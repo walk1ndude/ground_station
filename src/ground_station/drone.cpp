@@ -43,7 +43,7 @@ void Drone::fetchPublishers() {
   
   topicToPublish << "/drone" << _droneData.id << SET_MARKER_INFO_TOPIC;
   
-  _posesInfoPublisher = _nh->advertise<navpts::PoseArrayID>(topicToPublish.str(), 1);
+  _posesInfoPublisher = _nh->advertise<navpts_group::PoseArrayID>(topicToPublish.str(), 1);
 }
 
 void Drone::fetchProgram() {
@@ -65,7 +65,7 @@ void Drone::fetchProgram() {
     QString("<remap from=\"/get_poses_info\" to=\"/%1/get_poses_info\" />\n").arg(droneName) <<
     QString("<remap from=\"cmd_vel\" to=\"/%1/cmd_vel\" />\n").arg(droneName) <<
     QString("<%2 output=\"screen\"/>\n").arg(QString::fromStdString(_droneData.driver)) <<
-    "<node pkg=\"navpts\" type=\"navpts\" name=\"navpts\" respawn=\"true\" output=\"screen\">\n" <<
+    "<node pkg=\"navpts_group\" type=\"navpts_group\" name=\"navpts_group\" respawn=\"true\" output=\"screen\">\n" <<
     "<rosparam param=\"flightTask\">[1, 4, 5]</rosparam>\n" <<
     "<rosparam param=\"yawRotateHeight\">0.45</rosparam>\n" <<
     "<rosparam param=\"hitTargetDist\">0.15</rosparam>\n" <<
@@ -97,11 +97,11 @@ void Drone::finishTask(int code) {
   emit signalTaskFinished(this);
 }
 
-void Drone::getPosesInfo(const navpts::PoseArrayID & posesInfo) {
+void Drone::getPosesInfo(const navpts_group::PoseArrayID & posesInfo) {
   _posesInfo = posesInfo;
   emit signalCorrectPosesInfo(this, posesInfo);
 }
 
-void Drone::setPosesInfo(navpts::PoseArrayID posesInfo) {
-  _posesInfoPublisher.publish<navpts::PoseArrayID>(posesInfo);
+void Drone::setPosesInfo(navpts_group::PoseArrayID posesInfo) {
+  _posesInfoPublisher.publish<navpts_group::PoseArrayID>(posesInfo);
 }

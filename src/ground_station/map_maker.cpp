@@ -47,10 +47,10 @@ void MapMaker::updateRVizMap(PosesVisualData posesVisualData, geometry_msgs::Pos
   _visualPub.publish<visualization_msgs::MarkerArray>(mapPoses);
 }
 
-void MapMaker::addNewInfoToMap(Map * map, Drone * drone, const navpts::PoseArrayID & posesInfo) {
+void MapMaker::addNewInfoToMap(Map * map, Drone * drone, const navpts_group::PoseArrayID & posesInfo) {
   map->addNewPoses(drone, posesInfo);
 }
 
-void MapMaker::correctPosesInfo(Drone * drone, navpts::PoseArrayID posesInfo) {
+void MapMaker::correctPosesInfo(Drone * drone, navpts_group::PoseArrayID posesInfo) {
   addNewInfoToMap(_map, drone, posesInfo);
 }
