@@ -1,4 +1,5 @@
 #include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "ground_station/map.h"
 
@@ -135,13 +136,13 @@ void Map::findRTMatrices(Drone * pivotDrone, const QVector<Drone*> & dronesWithS
   std::vector<uchar>inliers;
   
   cv::Matx44f curRT = cv::Matx44f::eye();
-  cv::Mat curRT34(3, 4, CV_64F);;
+  cv::Mat curRT34(3, 4, CV_64F);
   
   while(it.hasNext()) {
     curDrone = it.next();
     curPoses = Map::posesToCvPoints(_posesByDrone[curDrone]);
     
-    curRT = cv::estimateAffine3D(pivotPoses, curPoses, curRT34, inliers);
+    cv::estimateAffine3D(pivotPoses, curPoses, curRT34, inliers, 5.0, 0.96);
     //_dronesRT.insert(curDrone, curRT);
   }
 }
