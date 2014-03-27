@@ -3,7 +3,7 @@ project(ground_station)
 
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs sensor_msgs cv_bridge)
 find_package(Qt5Core)
-find_package(OpenCV REQUIRED COMPONENTS highgui imgproc)
+find_package(OpenCV REQUIRED COMPONENTS highgui imgproc calib3d)
 
 set(CMAKE_BUILD_TYPE Release)
 
@@ -17,7 +17,7 @@ file(GLOB_RECURSE QT_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINK
 
 add_executable(ground_station_node ${QT_SOURCES} ${QT_MOC_HPP})
 
-add_dependencies(ground_station_node ${PROJECT_NAME}_generate_messages_cpp)
+add_dependencies(ground_station_node ${PROJECT_NAME}_gencpp)
 qt5_use_modules(ground_station_node Core)
 
 target_link_libraries(ground_station_node ${catkin_LIBRARIES} Qt5::Core ${OpenCV_LIBS})

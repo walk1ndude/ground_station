@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
+#include <navpts/PoseArrayID.h>
 
 #include <QtCore/QObject>
 #include <QtCore/QProcess>
@@ -38,7 +39,7 @@ private:
   
   ros::Publisher _posesInfoPublisher;
   
-  geometry_msgs::PoseArray _posesInfo;
+  navpts::PoseArrayID _posesInfo;
   
   DroneData _droneData;
   
@@ -51,16 +52,16 @@ private:
   void fetchSubscribers();
   void fetchPublishers();
   
-  void getPosesInfo(const geometry_msgs::PoseArray & posesInfo);
+  void getPosesInfo(const navpts::PoseArrayID & posesInfo);
 
 signals:
   void signalTaskFinished(Drone * drone);
-  void signalCorrectPosesInfo(Drone * drone, geometry_msgs::PoseArray posesInfo);
+  void signalCorrectPosesInfo(Drone * drone, navpts::PoseArrayID posesInfo);
 
 public slots:
   void startTask();
   void finishTask(int code);
-  void setPosesInfo(geometry_msgs::PoseArray posesInfo);
+  void setPosesInfo(navpts::PoseArrayID posesInfo);
 };
 
 #endif

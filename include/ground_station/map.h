@@ -11,6 +11,14 @@
 
 #include <visualization_msgs/Marker.h>
 
+/*
+#include <pcl_ros/io/pcd_io.h>
+#include <pcl_ros/point_cloud.h>
+
+#include <pcl_conversions/pcl_conversions.h>
+*/
+#include <opencv2/core/core.hpp>
+
 #include "ground_station/drone.h"
 
 #define POSE_SIMILAR_TOLERANCE_BORDER 0.5 // a sphere around marker to seperate really new or previously found markers
@@ -65,37 +73,41 @@ public:
   explicit Map(const PosesVisualData & worldMapVisualData, QObject * parent = 0);
   ~Map();
   
-  void addNewPoses(Drone * drone, const geometry_msgs::PoseArray & posesInfo);
+  void addNewPoses(Drone * drone, const navpts::PoseArrayID & posesInfo);
   
 private:
   QHash<Drone*, PosesVisualData>_drones;
   
-  QHash<Drone*, QVector<geometry_msgs::PoseStamped> >_posesByDrone;
-  QVector<geometry_msgs::PoseStamped>_worldMap;
+  //QHash<Drone*, navpts::PoseArrayID>_posesByDrone;
+  //QHash<Drone*, pcl::PointCloud<pcl::PointXYZ> >_pointClouds;
+  QHash<Drone*, QHash<int, geometry_msgs::PoseStamped> >_posesByDrone;
+  QHash<int, geometry_msgs::PoseStamped>_worldMap;
+  
+  QHash<Drone*, cv::Matx44f>_dronesRT;
   
   PosesVisualData _worldMapVisualData;
   
   QMutex _mapMutex;
   
   //for now first drone - map coordinate system's center
-  Drone * _droneCoord;
+  Drone * _droneWorldMap;
   
   void addNewDroneRViz(Drone * drone);
-  void addNewDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo);
+  void addNewDroneMap(Drone * drone, const navpts::PoseArrayID & posesInfo);
+  void addNewDroneRT(Drone * drone);
   
-  void updateDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo);
+  static QHash<int, geometry_msgs::PoseStamped> poseArrayToHash(const navpts::PoseArrayID & posesInfo);
+  static geometry_msgs::PoseArray hashToPoseArray(const QHash<int, geometry_msgs::PoseStamped> & posesInfo);
   
-  static size_t findPoseInArray(const QVector<geometry_msgs::PoseStamped> & posesDrone, const geometry_msgs::Pose & pose,
-    const float & toleranceRadius = 1.0);
+  void updateDroneMap(Drone * drone, const navpts::PoseArrayID & posesInfo);
   
   void tryToUpdateWorldMap();
+  QVector<Drone*> findDronesWithSimilarPoses(Drone * pivotDrone);
+  void findRTMatrices(Drone * pivotDrone, const QVector<Drone*> & dronesWithSimilarPoses);
+  
+  static std::vector<cv::Point3f> posesToCvPoints(const QHash<int, geometry_msgs::PoseStamped> & poses);
   
   void updateRViz();
-  
-  //another solution to create own PoseStampedArray.. but for what reason? is there so much overhead?
-  
-  static geometry_msgs::PoseArray qVPosesArrayToPoseArray(const QVector<geometry_msgs::PoseStamped> & posesStamped);
-  static QVector<geometry_msgs::PoseStamped> posesArrayToQVPoseArray(const geometry_msgs::PoseArray & posesArray);
   
 signals:
   void signalUpdateRViz(PosesVisualData posesVisualData, geometry_msgs::PoseArray posesInfo);

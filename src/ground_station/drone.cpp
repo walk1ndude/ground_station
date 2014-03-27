@@ -43,7 +43,7 @@ void Drone::fetchPublishers() {
   
   topicToPublish << "/drone" << _droneData.id << SET_MARKER_INFO_TOPIC;
   
-  _posesInfoPublisher = _nh->advertise<geometry_msgs::PoseArray>(topicToPublish.str(), 1);
+  _posesInfoPublisher = _nh->advertise<navpts::PoseArrayID>(topicToPublish.str(), 1);
 }
 
 void Drone::fetchProgram() {
@@ -97,11 +97,11 @@ void Drone::finishTask(int code) {
   emit signalTaskFinished(this);
 }
 
-void Drone::getPosesInfo(const geometry_msgs::PoseArray & posesInfo) {
+void Drone::getPosesInfo(const navpts::PoseArrayID & posesInfo) {
   _posesInfo = posesInfo;
   emit signalCorrectPosesInfo(this, posesInfo);
 }
 
-void Drone::setPosesInfo(geometry_msgs::PoseArray posesInfo) {
-  _posesInfoPublisher.publish<geometry_msgs::PoseArray>(posesInfo);
+void Drone::setPosesInfo(navpts::PoseArrayID posesInfo) {
+  _posesInfoPublisher.publish<navpts::PoseArrayID>(posesInfo);
 }

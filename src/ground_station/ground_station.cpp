@@ -73,7 +73,7 @@ void GroundStation::fetchDrones(const std::vector<std::string> & droneDrivers) {
     
     QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     
-    QObject::connect(_mapMaker, &MapMaker::signalCorrectedMarkerInfo, drone, &Drone::setPosesInfo, Qt::DirectConnection);
+    QObject::connect(_mapMaker, &MapMaker::signalCorrectedPosesInfo, drone, &Drone::setPosesInfo, Qt::DirectConnection);
     
     _drones.insert(drone);
     

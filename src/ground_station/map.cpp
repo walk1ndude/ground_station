@@ -1,7 +1,10 @@
+#include <opencv2/calib3d/calib3d.hpp>
+
 #include "ground_station/map.h"
 
 Map::Map(const PosesVisualData & worldMapVisualData, QObject * parent):
   _worldMapVisualData(worldMapVisualData),
+  _droneWorldMap(0),
   QObject(parent) {
 
 }
@@ -9,12 +12,14 @@ Map::Map(const PosesVisualData & worldMapVisualData, QObject * parent):
 Map::~Map() {
   _drones.clear();
   _posesByDrone.clear();
+  _dronesRT.clear();
 }
 
-void Map::addNewPoses(Drone * drone, const geometry_msgs::PoseArray & posesInfo) {
+void Map::addNewPoses(Drone * drone, const navpts::PoseArrayID & posesInfo) {
   _mapMutex.lock();
   
   addNewDroneRViz(drone);
+  addNewDroneRT(drone);
   addNewDroneMap(drone, posesInfo);
   
   tryToUpdateWorldMap();
@@ -30,59 +35,155 @@ void Map::addNewDroneRViz(Drone * drone) {
   }
 }
 
-void Map::addNewDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo) {
+void Map::addNewDroneRT(Drone * drone) {
+  if (!_dronesRT.contains(drone)) {
+    if (!_droneWorldMap) {
+      _droneWorldMap = drone;
+    }
+    _dronesRT.insert(drone, cv::Matx44f::eye());
+  }
+}
+
+void Map::addNewDroneMap(Drone * drone, const navpts::PoseArrayID & posesInfo) {
   if (!_posesByDrone.contains(drone)) {
-    _posesByDrone.insert(drone, posesArrayToQVPoseArray(posesInfo));
+    _posesByDrone.insert(drone, poseArrayToHash(posesInfo));
   }
   else {
     updateDroneMap(drone, posesInfo);
   }
 }
 
-void Map::tryToUpdateWorldMap() {
-  
-  
-}
-
-void Map::updateDroneMap(Drone * drone, const geometry_msgs::PoseArray & posesInfo) {
-  // 'cause we don't want to check new poses with new, only new with old ones
-  QVector<geometry_msgs::PoseStamped>posesDroneNew = _posesByDrone[drone];
-  QVector<geometry_msgs::PoseStamped>posesDroneOld = _posesByDrone[drone];
-  
-  geometry_msgs::PoseStamped pose;
-  size_t pos;
+QHash<int, geometry_msgs::PoseStamped> Map::poseArrayToHash(const navpts::PoseArrayID & posesInfo) {
+  QHash<int, geometry_msgs::PoseStamped>poses;
   
   for (size_t i = 0; i != posesInfo.poses.size(); ++ i) {
-    pos = findPoseInArray(posesDroneOld, posesInfo.poses[i], POSE_SIMILAR_TOLERANCE_BORDER);
-    
-    if (pos == -1) {
-      pose.header = posesInfo.header;
-      pose.pose = posesInfo.poses[i];
-      
-      posesDroneNew.push_back(pose);
-    }
-    else {
-      posesDroneNew[pos].header = posesInfo.header;
-      posesDroneNew[pos].pose = posesInfo.poses[i];
-    }
+    poses.insert(posesInfo.poses[i].id, posesInfo.poses[i].spottedPose);
   }
   
-  _posesByDrone[drone] = posesDroneNew;
+  return poses;
 }
 
-size_t Map::findPoseInArray(const QVector<geometry_msgs::PoseStamped> & posesDrone, const geometry_msgs::Pose & pose,
-		       const float & toleranceRadius) {
-  geometry_msgs::PoseStamped curPose;
+geometry_msgs::PoseArray Map::hashToPoseArray(const QHash<int, geometry_msgs::PoseStamped> & posesInfo) {
+  geometry_msgs::PoseArray poseArray;
   
-  for (size_t i = 0; i != posesDrone.size(); ++ i) {
-    if ((curPose.pose.position.x - pose.position.x) * (curPose.pose.position.x - pose.position.x) +
-      (curPose.pose.position.y - pose.position.y) * (curPose.pose.position.y - pose.position.y) +
-      (curPose.pose.position.z - pose.position.z) * (curPose.pose.position.z - pose.position.z) <= toleranceRadius) {
-	return i;
-    }
+  QHashIterator<int, geometry_msgs::PoseStamped>it(posesInfo);
+  
+  while (it.hasNext()) {
+    it.next();
+    poseArray.poses.push_back(it.value().pose);
   }
   
-  return -1;
+  return poseArray;
+}
+
+QVector<Drone*> Map::findDronesWithSimilarPoses(Drone * pivotDrone) {
+  if (_posesByDrone[pivotDrone].size() >= 4) {
+    QVector<Drone*>dronesWithSimilarPoses;
+    
+    QHash<int, geometry_msgs::PoseStamped>posesPivotDrone = _posesByDrone[pivotDrone];
+    
+    QHashIterator<int, geometry_msgs::PoseStamped>itPivotDrone(posesPivotDrone);
+    QHashIterator<Drone*, QHash<int, geometry_msgs::PoseStamped> >itDrone(_posesByDrone);
+    
+    int similarity;
+    
+    while(itDrone.hasNext()) {
+      itDrone.next();
+      
+      // don't want to compute RT matrix for the same drone or to drone with not enough points
+      if (pivotDrone != itDrone.key() && itDrone.value().size() >= 4) {
+	itPivotDrone.toFront();
+	similarity = 0;
+
+	if (posesPivotDrone.size() >= itDrone.value().size()) {
+	  while(similarity < 4 && itPivotDrone.hasNext()) {
+	    itPivotDrone.next();
+	    similarity += (itDrone.value().contains(itPivotDrone.key())) ? 1 : 0;
+	  }
+	}
+	else {
+	  QHashIterator<int, geometry_msgs::PoseStamped>itCurDrone(itDrone.value());
+	  while(similarity < 4 && itCurDrone.hasNext()) {
+	    itCurDrone.next();
+	    similarity += (posesPivotDrone.contains(itCurDrone.key())) ? 1 : 0;
+	  }
+	}
+	
+	qDebug() << "push new drone similar";
+	if (similarity >= 4) {
+	  dronesWithSimilarPoses.push_back(itDrone.key());
+	}
+      }
+    }
+    
+    return dronesWithSimilarPoses;
+  }
+  else {
+    qDebug() << "not enough points";
+    return QVector<Drone*>(); //not enough points -> try on next update
+  }
+}
+
+void Map::findRTMatrices(Drone * pivotDrone, const QVector<Drone*> & dronesWithSimilarPoses) {
+  Drone * curDrone;
+  
+  QVectorIterator<Drone*>it(dronesWithSimilarPoses);
+  
+  std::vector<cv::Point3f>pivotPoses = Map::posesToCvPoints(_posesByDrone[pivotDrone]);
+  
+  std::vector<cv::Point3f>curPoses;
+  std::vector<uchar>inliers;
+  
+  cv::Matx44f curRT = cv::Matx44f::eye();
+  cv::Mat curRT34(3, 4, CV_64F);;
+  
+  while(it.hasNext()) {
+    curDrone = it.next();
+    curPoses = Map::posesToCvPoints(_posesByDrone[curDrone]);
+    
+    curRT = cv::estimateAffine3D(pivotPoses, curPoses, curRT34, inliers);
+    //_dronesRT.insert(curDrone, curRT);
+  }
+}
+
+void Map::tryToUpdateWorldMap() {
+  QVector<Drone*>dronesWithSimilarPoses = findDronesWithSimilarPoses(_droneWorldMap);
+  qDebug() << dronesWithSimilarPoses;
+  
+  if (dronesWithSimilarPoses.size()) {
+    qDebug() << "similarity found";
+    findRTMatrices(_droneWorldMap, dronesWithSimilarPoses);
+  }
+}
+
+void Map::updateDroneMap(Drone * drone, const navpts::PoseArrayID & posesInfo) {
+  QHash<int, geometry_msgs::PoseStamped> & dronePoses = _posesByDrone[drone];
+  
+  navpts::PoseID pose;
+  
+  for (size_t i = 0; i != posesInfo.poses.size(); ++ i) {
+    pose = posesInfo.poses[i];
+    
+    if (dronePoses.contains(pose.id)) {
+      dronePoses[pose.id] = pose.spottedPose;
+    }
+    else {
+      dronePoses.insert(pose.id, pose.spottedPose);
+    }
+  }
+}
+
+std::vector<cv::Point3f> Map::posesToCvPoints(const QHash<int, geometry_msgs::PoseStamped> & poses) {
+  std::vector<cv::Point3f>cvPoints;
+  
+  QHashIterator<int, geometry_msgs::PoseStamped>it(poses);
+  
+  while(it.hasNext()) {
+    it.next();
+    cvPoints.push_back(cv::Point3f(it.value().pose.position.x, it.value().pose.position.y, it.value().pose.position.z));
+  }
+  
+  return cvPoints;
 }
 
 void Map::updateRViz() {
@@ -90,33 +191,8 @@ void Map::updateRViz() {
   
   while(it.hasNext()) {
     it.next();
-    emit signalUpdateRViz(it.value(), qVPosesArrayToPoseArray(_posesByDrone[it.key()]));
+    emit signalUpdateRViz(it.value(), hashToPoseArray(_posesByDrone[it.key()]));
   }
   
-  emit signalUpdateRViz(_worldMapVisualData, qVPosesArrayToPoseArray(_worldMap));
-}
-
-QVector<geometry_msgs::PoseStamped> Map::posesArrayToQVPoseArray(const geometry_msgs::PoseArray & posesArray) {
-  QVector<geometry_msgs::PoseStamped>qVPosesArray;
-  geometry_msgs::PoseStamped pStamped;
-  
-  for (size_t i = 0; i != posesArray.poses.size(); ++ i) {
-    pStamped.header = posesArray.header;
-    pStamped.pose = posesArray.poses[i];
-    
-    qVPosesArray.push_back(pStamped);
-  }
-  
-  return qVPosesArray;
-}
-
-geometry_msgs::PoseArray Map::qVPosesArrayToPoseArray(const QVector<geometry_msgs::PoseStamped> & posesStamped) {
-  geometry_msgs::PoseArray poseArray;
-  poseArray.header = posesStamped[0].header;
-    
-  for (size_t i = 0; i != posesStamped.size(); ++ i) {
-    poseArray.poses.push_back(posesStamped[i].pose);
-  }
-  
-  return poseArray;
+  emit signalUpdateRViz(_worldMapVisualData, hashToPoseArray(_worldMap));
 }

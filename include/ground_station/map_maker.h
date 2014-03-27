@@ -29,14 +29,14 @@ private:
   void fetchPublishers();
   void fetchMap();
   
-  void addNewInfoToMap(Map * map, Drone * drone, const geometry_msgs::PoseArray & posesInfo);
+  void addNewInfoToMap(Map * map, Drone * drone, const navpts::PoseArrayID & posesInfo);
   
 signals:
-  void signalCorrectedMarkerInfo(geometry_msgs::PoseArray markerInfo);
+  void signalCorrectedPosesInfo(navpts::PoseArrayID posesInfo);
 
 public slots:
   void startMapMaker();
-  void correctPosesInfo(Drone * drone, geometry_msgs::PoseArray posesInfo);
+  void correctPosesInfo(Drone * drone, navpts::PoseArrayID posesInfo);
   void updateRVizMap(PosesVisualData posesVisualData, geometry_msgs::PoseArray posesInfo);
 };
   
