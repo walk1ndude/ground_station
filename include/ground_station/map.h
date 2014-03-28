@@ -4,7 +4,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QMutex>
 #include <QtCore/QDebug>
-#include <QtCore/QHash>
+#include <QtCore/QMap>
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseArray.h>
@@ -22,6 +22,8 @@
 #include "ground_station/drone.h"
 
 #define POSE_SIMILAR_TOLERANCE_BORDER 0.5 // a sphere around marker to seperate really new or previously found markers
+
+#define DRONEPOSE_SEQ_ID 1000
 
 typedef struct _PosesVisualData {
   std::string ns;
@@ -76,14 +78,14 @@ public:
   void addNewPoses(Drone * drone, const navpts_group::PoseArrayID & posesInfo);
   
 private:
-  QHash<Drone*, PosesVisualData>_drones;
+  QMap<Drone*, PosesVisualData>_drones;
   
-  //QHash<Drone*, navpts::PoseArrayID>_posesByDrone;
-  //QHash<Drone*, pcl::PointCloud<pcl::PointXYZ> >_pointClouds;
-  QHash<Drone*, QHash<int, geometry_msgs::PoseStamped> >_posesByDrone;
-  QHash<int, geometry_msgs::PoseStamped>_worldMap;
+  //QMap<Drone*, navpts::PoseArrayID>_posesByDrone;
+  //QMap<Drone*, pcl::PointCloud<pcl::PointXYZ> >_pointClouds;
+  QMap<Drone*, QMap<int, geometry_msgs::PoseStamped> >_posesByDrone;
+  QMap<int, geometry_msgs::PoseStamped>_worldMap;
   
-  QHash<Drone*, cv::Matx44f>_dronesRT;
+  QMap<Drone*, cv::Matx44f>_dronesRT;
   
   PosesVisualData _worldMapVisualData;
   
@@ -91,26 +93,29 @@ private:
   
   //for now first drone - map coordinate system's center
   Drone * _droneWorldMap;
+
+  int seq_id;
   
   void addNewDroneRViz(Drone * drone);
-  void addNewDroneMap(Drone * drone, const navpts_group::PoseArrayID & posesInfo);
+  void addNewDroneMap(Drone * drone, navpts_group::PoseArrayID posesInfo);
   void addNewDroneRT(Drone * drone);
   
-  static QHash<int, geometry_msgs::PoseStamped> poseArrayToHash(const navpts_group::PoseArrayID & posesInfo);
-  static geometry_msgs::PoseArray hashToPoseArray(const QHash<int, geometry_msgs::PoseStamped> & posesInfo);
+  static QMap<int, geometry_msgs::PoseStamped> poseArrayToHash(const navpts_group::PoseArrayID & posesInfo);
+  static navpts_group::PoseArrayID hashToPoseArray(QMap<int, geometry_msgs::PoseStamped> & posesInfo);
   
   void updateDroneMap(Drone * drone, const navpts_group::PoseArrayID & posesInfo);
   
   void tryToUpdateWorldMap();
-  QHash<Drone *, QVector<int> > findMatches(Drone * pivotDrone);
-  void findRTMatrices(Drone * pivotDrone, const QHash<Drone *, QVector<int> > &dronesWithMatches);
+  QMap<Drone *, QVector<int> > findMatches(Drone * pivotDrone);
+  void findRTMatrices(Drone * pivotDrone, const QMap<Drone *, QVector<int> > &dronesWithMatches);
   
   static cv::Point3f poseToCvPoint(const geometry_msgs::PoseStamped & pose);
+  static geometry_msgs::PoseStamped transformAffine(const cv::Matx44f & M, const geometry_msgs::PoseStamped & pose);
   
   void updateRViz();
   
 signals:
-  void signalUpdateRViz(PosesVisualData posesVisualData, geometry_msgs::PoseArray posesInfo);
+  void signalUpdateRViz(PosesVisualData posesVisualData, navpts_group::PoseArrayID * posesInfo);
 };
 
 #endif

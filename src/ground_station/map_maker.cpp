@@ -19,32 +19,51 @@ void MapMaker::startMapMaker() {
 
 void MapMaker::fetchMap() {
   _map = new Map(PosesVisualData("WorldMap"));
+
   QObject::connect(_map, &Map::signalUpdateRViz, this, &MapMaker::updateRVizMap);
 }
 
 void MapMaker::fetchPublishers() {
-  _visualPub = _nh->advertise<visualization_msgs::MarkerArray>(MAP_TOPIC, 1);
+    _markersPub = _nh->advertise<visualization_msgs::Marker>("visualization_marker", 1);
 }
 
-void MapMaker::updateRVizMap(PosesVisualData posesVisualData, geometry_msgs::PoseArray posesInfo) {
-  visualization_msgs::MarkerArray mapPoses;
-  
-  mapPoses.markers.resize(posesInfo.poses.size());
-  for (size_t i = 0; i != posesInfo.poses.size(); ++ i) {
-    mapPoses.markers[i].ns = posesVisualData.ns;
-    mapPoses.markers[i].type = posesVisualData.type;
-    mapPoses.markers[i].lifetime = posesVisualData.lifetime;
-    mapPoses.markers[i].action = posesVisualData.action;
-    mapPoses.markers[i].color = posesVisualData.color;
-    mapPoses.markers[i].scale = posesVisualData.scale;
-    
-    mapPoses.markers[i].id = i;
-    mapPoses.markers[i].header.frame_id = "map_frame";
-    mapPoses.markers[i].header.stamp = ros::Time();
-    mapPoses.markers[i].pose = posesInfo.poses[i];
-  }
-  
-  _visualPub.publish<visualization_msgs::MarkerArray>(mapPoses);
+void MapMaker::updateRVizMap(PosesVisualData posesVisualData, navpts_group::PoseArrayID * posesInfo) {
+    //ROS_INFO("updateRVizMap");
+
+    nav_msgs::Path path;
+    const std::string path_topic = std::string("/path_") + posesVisualData.ns;
+    path.header.frame_id = path_topic;
+
+    for (size_t i = 0; i != posesInfo->poses.size(); ++ i) {
+
+        if (posesInfo->poses[i].id < DRONEPOSE_SEQ_ID)
+        {
+            visualization_msgs::Marker pose;
+
+            pose.ns = posesVisualData.ns;
+            pose.type = posesVisualData.type;
+            pose.lifetime = posesVisualData.lifetime;
+            pose.action = posesVisualData.action;
+            pose.color = posesVisualData.color;
+            pose.scale = posesVisualData.scale;
+
+            pose.id = posesInfo->poses[i].id;
+            pose.header.frame_id = "/map_frame";
+            pose.header.stamp = ros::Time();
+            pose.pose = posesInfo->poses[i].spottedPose.pose;
+            _markersPub.publish<visualization_msgs::Marker>(pose);
+        }
+        else
+            path.poses.push_back(posesInfo->poses[i].spottedPose);
+    }
+    if (path.poses.size())
+    {
+        if (!_pathPubs.contains(path_topic))
+            _pathPubs.insert(path_topic, _nh->advertise<nav_msgs::Path>(path_topic, 1));
+        _pathPubs[path_topic].publish<nav_msgs::Path>(path);
+    }
+    delete posesInfo;
+    //ROS_INFO("updateRVizMap_end");
 }
 
 void MapMaker::addNewInfoToMap(Map * map, Drone * drone, const navpts_group::PoseArrayID & posesInfo) {

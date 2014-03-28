@@ -6,12 +6,11 @@
 
 #include <ros/ros.h>
 
+#include <nav_msgs/Path.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include "ground_station/drone.h"
 #include "ground_station/map.h"
-
-#define MAP_TOPIC "map_topic"
 
 class MapMaker : public QObject {
   Q_OBJECT
@@ -22,7 +21,8 @@ public:
 private:
   ros::NodeHandle * _nh;
   
-  ros::Publisher _visualPub;
+  ros::Publisher _markersPub;
+  QMap<std::string, ros::Publisher> _pathPubs;
   
   Map * _map;
   
@@ -37,7 +37,7 @@ signals:
 public slots:
   void startMapMaker();
   void correctPosesInfo(Drone * drone, navpts_group::PoseArrayID posesInfo);
-  void updateRVizMap(PosesVisualData posesVisualData, geometry_msgs::PoseArray posesInfo);
+  void updateRVizMap(PosesVisualData posesVisualData, navpts_group::PoseArrayID *posesInfo);
 };
   
 #endif

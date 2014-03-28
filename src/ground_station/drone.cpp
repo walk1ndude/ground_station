@@ -65,7 +65,7 @@ void Drone::fetchProgram() {
     QString("<remap from=\"/get_poses_info\" to=\"/%1/get_poses_info\" />\n").arg(droneName) <<
     QString("<remap from=\"cmd_vel\" to=\"/%1/cmd_vel\" />\n").arg(droneName) <<
     QString("<%2 output=\"screen\"/>\n").arg(QString::fromStdString(_droneData.driver)) <<
-    "<node pkg=\"navpts_group\" type=\"navpts_group\" name=\"navpts_group\" respawn=\"true\" output=\"screen\">\n" <<
+    "<node pkg=\"navpts_group\" type=\"navpts_group\" name=\"navpts_group\" respawn=\"false\" output=\"screen\">\n" <<
     "<rosparam param=\"flightTask\">[1, 4, 5]</rosparam>\n" <<
     "<rosparam param=\"yawRotateHeight\">0.45</rosparam>\n" <<
     "<rosparam param=\"hitTargetDist\">0.15</rosparam>\n" <<
@@ -84,7 +84,7 @@ void Drone::startTask() {
   if (_program != "") {
     _process = new QProcess;
     _process->setProcessChannelMode(QProcess::MergedChannels);
-
+    sleep(5);
     _process->start(_program);
     
     QObject::connect(_process, (void (QProcess::*)(int))&QProcess::finished, this, &Drone::finishTask);
