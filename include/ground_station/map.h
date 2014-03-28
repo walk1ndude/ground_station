@@ -51,9 +51,9 @@ typedef struct _PosesVisualData {
     visualization_msgs::Marker::_color_type color;
     
     color.a = 1.0;
-    color.b = qrand() / (float) RAND_MAX;
-    color.g = qrand() / (float) RAND_MAX;
-    color.r = qrand() / (float) RAND_MAX;
+    color.b = qrand() / (float) RAND_MAX * 100;
+    color.g = qrand() / (float) RAND_MAX * 100;
+    color.r = qrand() / (float) RAND_MAX * 100;
     
     return color;
   }
@@ -61,9 +61,9 @@ typedef struct _PosesVisualData {
   static visualization_msgs::Marker::_scale_type defaultScale() {
     visualization_msgs::Marker::_scale_type scale;
     
-    scale.x = 0.1;
-    scale.y = 0.1;
-    scale.z = 0.1;
+    scale.x = 0.05;
+    scale.y = 0.05;
+    scale.z = 0.05;
     
     return scale;
   }

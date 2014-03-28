@@ -1,8 +1,8 @@
 <launch>
   <node pkg="ground_station" type="ground_station_node" name="ground_station_node" output="screen" required="false">
     <rosparam param="droneDrivers">[
-      "node pkg=\"rosbag\" type=\"play\" name=\"player\" args = \"-l /home/ardrone/new_drone_task/drone0_2014-03-14-20-23-14.bag --hz=10\" required=\"false\"",
-      "node pkg=\"rosbag\" type=\"play\" name=\"player\" args = \"-l /home/ardrone/new_drone_task/drone0_2014-03-14-20-23-14.bag --hz=10\" required=\"false\""]</rosparam>
+      "node pkg=\"rosbag\" type=\"play\" name=\"player\" args = \"/home/walkindude/new_drone_task/drone0_2014-03-14-20-23-14.bag --hz=10\" required=\"false\"",
+      "node pkg=\"rosbag\" type=\"play\" name=\"player\" args = \"/home/walkindude/new_drone_task/drone1_2014-03-14-20-47-01.bag --hz=10\" required=\"false\""]</rosparam>
   </node>
   <node pkg="rviz" type="rviz" name="rviz"/>
 </launch>

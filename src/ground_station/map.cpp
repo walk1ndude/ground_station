@@ -35,7 +35,22 @@ void Map::addNewPoses(Drone * drone, const navpts_group::PoseArrayID & posesInfo
 
 void Map::addNewDroneRViz(Drone * drone) { 
   if (!_drones.contains(drone)) {
-    _drones.insert(drone, PosesVisualData(drone->strId()));
+    visualization_msgs::Marker::_color_type color;
+    
+    if (_drones.empty()) {
+      color.a = 1.0;
+      color.r = 1.0;
+      color.b = 0.0;
+      color.g = 0.0;
+    }
+    else {
+      color.a = 1.0;
+      color.r = 0.0;
+      color.b = 0.0;
+      color.g = 1.0;
+    }
+    
+    _drones.insert(drone, PosesVisualData(drone->strId(), color));
   }
 }
 
@@ -113,6 +128,7 @@ QMap<Drone *, QVector<int> > Map::findMatches(Drone * pivotDrone) {
                     matches.push_back(itPivotDrone.key());
             }
             if (matches.size() >= 4) {
+		qDebug() << "4 points matched";
                 dronesWithMatches.insert(itDrone.key(), matches);
             }
         }
@@ -220,7 +236,7 @@ void Map::updateRViz() {
     // perform coordinates translation
     cv::Matx44f & RT = _dronesRT[it.key()];
     for (int i = 0; i < poses->poses.size(); i++)
-        poses->poses[i].spottedPose = transformAffine(RT, poses->poses[i].spottedPose);
+        poses->poses[i].spottedPose = transformAffine(RT.inv(), poses->poses[i].spottedPose);
 
     emit signalUpdateRViz(it.value(), poses);
   }
