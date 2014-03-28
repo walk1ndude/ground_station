@@ -174,7 +174,7 @@ void Map::findRTMatrices(Drone * pivotDrone, const QMap<Drone *, QVector<int> > 
         _dronesRT[it.key()] = cv::Matx44f(RT(0,0), RT(0,1), RT(0,2), RT(0,3),
                                           RT(1,0), RT(1,1), RT(1,2), RT(1,3),
                                           RT(2,0), RT(2,1), RT(2,2), RT(2,3),
-                                          0,       0,       0,       1);
+                                          0,       0,       0,       1).inv();
         //ROS_INFO("111");
         //_dronesRT.insert(curDrone, curRT);
     }
@@ -236,7 +236,7 @@ void Map::updateRViz() {
     // perform coordinates translation
     cv::Matx44f & RT = _dronesRT[it.key()];
     for (int i = 0; i < poses->poses.size(); i++)
-        poses->poses[i].spottedPose = transformAffine(RT.inv(), poses->poses[i].spottedPose);
+        poses->poses[i].spottedPose = transformAffine(RT, poses->poses[i].spottedPose);
 
     emit signalUpdateRViz(it.value(), poses);
   }
